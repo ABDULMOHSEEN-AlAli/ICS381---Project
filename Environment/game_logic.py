@@ -4,14 +4,14 @@ from environment_constants import *
 from game_grid import Grid
 from snake import Snake
 from food import FoodManager
-from ui import UI
+# from ui import UI
 # from ai_agent import SimpleAI, AdvancedAI
 
 
 class Game:
     def __init__(self):
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-        pygame.display.set_caption("Snake AI Competition")
+        pygame.display.set_caption("Snake AI Competition - ICS 381 Project")
 
         # Initialize game components
         self.grid = Grid()
@@ -22,14 +22,14 @@ class Game:
         while snake2_pos == snake1_pos:  # Ensure they don't overlap
             snake2_pos = self.get_random_position()
 
-        self.snake1 = Snake(snake1_pos, BLUE, "Snake 1")
-        self.snake2 = Snake(snake2_pos, RED, "Snake 2")
+        self.snake1 = Snake(snake1_pos, BLUE, "Abdulmohseen")
+        self.snake2 = Snake(snake2_pos, RED, "Mohammed")
 
         # Initialize food manager
         self.food_manager = FoodManager(self.grid, [self.snake1, self.snake2])
 
         # Initialize UI
-        self.ui = UI(self.screen)
+        # self.ui = UI(self.screen) # ToDo: make new UI
 
         # Game state
         self.game_over = False
@@ -37,8 +37,8 @@ class Game:
         self.turn_count = 0
 
         # AI agents (optional - comment out if using human controls)
-        self.ai1 = SimpleAI(self.snake1, self.snake2, self.grid, self.food_manager)
-        self.ai2 = SimpleAI(self.snake2, self.snake1, self.grid, self.food_manager)
+        # self.ai1 = SimpleAI(self.snake1, self.snake2, self.grid, self.food_manager) # ToDo AI
+        # self.ai2 = SimpleAI(self.snake2, self.snake1, self.grid, self.food_manager)
 
     def get_random_position(self):
         """Generate a random position on the grid"""
@@ -73,12 +73,12 @@ class Game:
             return
 
         # Get AI moves
-        self.ai1.make_move()
-        self.ai2.make_move()
+        # self.ai1.make_move() ToDo: make the AI logic
+        # self.ai2.make_move()
 
         # Update snakes
-        self.snake1.update_move()
-        self.snake2.update_move()
+        self.snake1.update_move(snake1_move)
+        self.snake2.update_move(snake2_move)
 
         # Check for collisions and food
         self.check_collisions()
@@ -141,50 +141,48 @@ class Game:
                 return
 
         # Check if snakes hit spike Traps
-        for trap in self.food_manager.spike_traps:
+        for trap, _ in self.food_manager.spike_trap_items:
             if head1 == trap:
                 self.snake1.score = max(0, self.snake1.score - 1)
-                self.snake1.reduce_length()
-                self.food_manager.spawn_spike_trap(trap)
-
-                # Check if length is zero
-                if len(self.snake1.body) <= 0:
+                isValid = self.snake1.reduce_length()
+                if not isValid:
                     self.game_over = True
                     self.winner = self.snake2
                     return
+                self.food_manager.spawn_spike_trap(trap)
+
 
             if head2 == trap:
                 self.snake2.score = max(0, self.snake2.score - 1)
-                self.snake2.reduce_length()
-                self.food_manager.spawn_spike_trap(trap)
-
-                # Check if length is zero
-                if len(self.snake2.body) <= 0:
+                isValid = self.snake2.reduce_length()
+                if not isValid:
                     self.game_over = True
                     self.winner = self.snake1
                     return
+                self.food_manager.spawn_spike_trap(trap)
 
-    def render(self):
-        """Render the game"""
-        # Clear the screen
-        self.screen.fill(BLACK)
 
-        # Draw the grid
-        self.grid.draw(self.screen)
-
-        # Draw food and Traps
-        self.food_manager.draw(self.screen)
-
-        # Draw the snakes
-        self.snake1.draw(self.screen)
-        self.snake2.draw(self.screen)
-
-        # Draw UI elements (score, etc.)
-        self.ui.draw_scores(self.snake1.score, self.snake2.score)
-
-        # Draw game over message if applicable
-        if self.game_over:
-            self.ui.draw_game_over(self.winner)
-
-        # Update the display
-        pygame.display.flip()
+    # def render(self):
+    #     """Render the game"""
+    #     # Clear the screen
+    #     self.screen.fill(BLACK)
+    #
+    #     # Draw the grid
+    #     self.grid.draw(self.screen)
+    #
+    #     # Draw food and Traps
+    #     self.food_manager.draw(self.screen)
+    #
+    #     # Draw the snakes
+    #     self.snake1.draw(self.screen)
+    #     self.snake2.draw(self.screen)
+    #
+    #     # Draw UI elements (score, etc.)
+    #     self.ui.draw_scores(self.snake1.score, self.snake2.score)
+    #
+    #     # Draw game over message if applicable
+    #     if self.game_over:
+    #         self.ui.draw_game_over(self.winner)
+    #
+    #     # Update the display
+    #     pygame.display.flip()
