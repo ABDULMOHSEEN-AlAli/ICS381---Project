@@ -4,7 +4,7 @@ from environment_constants import *
 from game_grid import Grid
 from snake import Snake
 from food import FoodManager
-# from ui import UI
+from ui import UI
 # from ai_agent import SimpleAI, AdvancedAI
 
 
@@ -22,14 +22,14 @@ class Game:
         while snake2_pos == snake1_pos:  # Ensure they don't overlap
             snake2_pos = self.get_random_position()
 
-        self.snake1 = Snake(snake1_pos, BLUE, "Abdulmohseen")
-        self.snake2 = Snake(snake2_pos, RED, "Mohammed")
+        self.snake1 = Snake(snake1_pos, BLUE, "Blue Snake")
+        self.snake2 = Snake(snake2_pos, ORANGE, "Orange Snake")
 
         # Initialize food manager
         self.food_manager = FoodManager(self.grid, [self.snake1, self.snake2])
 
         # Initialize UI
-        # self.ui = UI(self.screen) # ToDo: make new UI
+        self.ui = UI(self.screen)
 
         # Game state
         self.game_over = False
@@ -45,13 +45,34 @@ class Game:
         return (random.randint(0, GRID_WIDTH - 1), random.randint(0, GRID_HEIGHT - 1))
 
     def handle_input(self, event):
-        # ToDo: get user input while playing
         """Handle user input for snake movement"""
         if self.game_over:
             # Check for restart
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 self.__init__()  # Reset the game
             return
+
+        # Human controls - only needed if not using AI
+        if event.type == pygame.KEYDOWN:
+            # Snake 1 controls
+            if event.key == pygame.K_UP and self.snake1.direction != DOWN:
+                self.snake1.update_move(UP)
+            elif event.key == pygame.K_DOWN and self.snake1.direction != UP:
+                self.snake1.update_move(DOWN)
+            elif event.key == pygame.K_LEFT and self.snake1.direction != RIGHT:
+                self.snake1.update_move(LEFT)
+            elif event.key == pygame.K_RIGHT and self.snake1.direction != LEFT:
+                self.snake1.update_move(RIGHT)
+
+            # Snake 2 controls
+            if event.key == pygame.K_w and self.snake2.direction != DOWN:
+                self.snake2.update_move(UP)
+            elif event.key == pygame.K_s and self.snake2.direction != UP:
+                self.snake2.update_move(DOWN)
+            elif event.key == pygame.K_a and self.snake2.direction != RIGHT:
+                self.snake2.update_move(LEFT)
+            elif event.key == pygame.K_d and self.snake2.direction != LEFT:
+                self.snake2.update_move(RIGHT)
 
     def update(self):
         """Update game state"""
@@ -77,12 +98,12 @@ class Game:
         # self.ai2.make_move()
 
         # Update snakes
-        self.snake1.update_move(snake1_move)
-        self.snake2.update_move(snake2_move)
+        # self.snake1.update_move(UP)
+        # self.snake2.update_move(DOWN)
 
         # Check for collisions and food
         self.check_collisions()
-        self.food_manager.check_food_collection()
+        self.food_manager.check_cell_collection()
 
         # Check win conditions
         if self.snake1.score >= MAX_SCORE:
@@ -91,6 +112,16 @@ class Game:
         elif self.snake2.score >= MAX_SCORE:
             self.game_over = True
             self.winner = self.snake2
+
+        elif self.snake1.score <0:
+            self.game_over = True
+            self.winner = self.snake2
+
+        elif self.snake2.score < 0:
+            self.game_over = True
+            self.winner = self.snake1
+
+
 
     def check_collisions(self):
         """Check for collisions between snakes, walls, and themselves"""
@@ -140,49 +171,37 @@ class Game:
                 self.winner = self.snake1
                 return
 
-        # Check if snakes hit spike Traps
-        for trap, _ in self.food_manager.spike_trap_items:
-            if head1 == trap:
-                self.snake1.score = max(0, self.snake1.score - 1)
-                isValid = self.snake1.reduce_length()
-                if not isValid:
-                    self.game_over = True
-                    self.winner = self.snake2
-                    return
-                self.food_manager.spawn_spike_trap(trap)
 
+    def render(self):
+        """Render the game"""
+        # Clear the screen
+        self.screen.fill(BLACK)
 
-            if head2 == trap:
-                self.snake2.score = max(0, self.snake2.score - 1)
-                isValid = self.snake2.reduce_length()
-                if not isValid:
-                    self.game_over = True
-                    self.winner = self.snake1
-                    return
-                self.food_manager.spawn_spike_trap(trap)
+        # Create grid surface
+        grid_surface = pygame.Surface((GRID_WIDTH * CELL_SIZE, GRID_HEIGHT * CELL_SIZE))
+        grid_surface.fill(DARK_GREY)  # Changed to dark grey like in the image
 
+        # Draw grid with lines
+        self.ui.draw_grid(grid_surface)
 
-    # def render(self):
-    #     """Render the game"""
-    #     # Clear the screen
-    #     self.screen.fill(BLACK)
-    #
-    #     # Draw the grid
-    #     self.grid.draw(self.screen)
-    #
-    #     # Draw food and Traps
-    #     self.food_manager.draw(self.screen)
-    #
-    #     # Draw the snakes
-    #     self.snake1.draw(self.screen)
-    #     self.snake2.draw(self.screen)
-    #
-    #     # Draw UI elements (score, etc.)
-    #     self.ui.draw_scores(self.snake1.score, self.snake2.score)
-    #
-    #     # Draw game over message if applicable
-    #     if self.game_over:
-    #         self.ui.draw_game_over(self.winner)
-    #
-    #     # Update the display
-    #     pygame.display.flip()
+        # Draw food and Traps
+        self.food_manager.draw(self.screen)
+
+        # Draw the snakes
+        self.snake1.draw(self.screen)
+        self.snake2.draw(self.screen)
+
+        # Draw UI elements - passing snake lengths
+        self.ui.draw_scores(
+            self.snake1.score,
+            self.snake2.score,
+            len(self.snake1.body),
+            len(self.snake2.body)
+        )
+
+        # Draw game over message if applicable
+        if self.game_over:
+            self.ui.draw_game_over(self.winner)
+
+        # Update the display
+        pygame.display.flip()

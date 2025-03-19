@@ -85,7 +85,7 @@ class FoodManager:
         image = random.choice(self.spike_trap_images)
         self.spike_trap_items.append((position, image))
 
-    def check_food_collection(self):
+    def check_cell_collection(self):
         """Check if any snake has collected food or hit a trap"""
         for snake in self.snakes:
             head_pos = snake.get_head_position()
@@ -115,10 +115,11 @@ class FoodManager:
             for i, (trap_pos, _) in enumerate(self.spike_trap_items[:]):
                 if head_pos == trap_pos:
                     self.spike_trap_items.pop(i)
-                    snake.reduce_length(REDUCE_RATE_TRAP)
-
-                    snake.score -= 1
+                    isValid = snake.reduce_length()
+                    snake.score = max(0, snake.score-1)
                     self.spawn_spike_trap()
+                    if not isValid:
+                        snake.score = -100
                     break
 
     def spawn_random_food(self):

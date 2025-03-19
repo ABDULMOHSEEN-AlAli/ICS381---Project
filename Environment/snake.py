@@ -14,8 +14,7 @@ class Snake:
     def set_direction(self, direction):
         """Set the snake's direction"""
         # Prevent moving in the opposite direction
-        x, y = direction
-        current_x, current_y = self.direction
+        self.direction = direction
 
 
     def get_direction(self, current_direction):
@@ -33,7 +32,6 @@ class Snake:
 
     def update_move(self, movement):
         """Update the snake's position"""
-
         # Get the current head position
         head_x, head_y = self.body[0]
 
