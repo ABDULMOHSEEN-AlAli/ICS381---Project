@@ -1,5 +1,4 @@
 # Game dimensions
-from Environment.food import FoodManager
 
 GRID_SIZE = 20  # 20x20 grid as specified in the proposal
 CELL_SIZE = 35  # Size of each cell in pixels
