@@ -1,1 +1,0 @@
-FOOD_AMOUNT
