@@ -4,7 +4,7 @@ from environment_constants import *
 from game_grid import Grid
 from snake import Snake
 from food import FoodManager
-from ui import UI
+from newUI import UI
 # from ai_agent import SimpleAI, AdvancedAI
 
 
@@ -103,7 +103,7 @@ class Game:
 
         # Check for collisions and food
         self.check_collisions()
-        self.food_manager.check_cell_collection()
+        self.food_manager.collect_item()
 
         # Check win conditions
         if self.snake1.score >= MAX_SCORE:

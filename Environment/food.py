@@ -31,7 +31,7 @@ class FoodManager:
         images = []
         for filename in os.listdir(folder_path):
             if filename.endswith(".png"):
-                img = pygame.image.load(os.path.join(folder_path, filename)) # ToDo: use svg images
+                img = pygame.image.load(os.path.join(folder_path, filename))
                 img = pygame.transform.scale(img, (CELL_SIZE, CELL_SIZE))
                 images.append(img)
         return images
@@ -85,7 +85,7 @@ class FoodManager:
         image = random.choice(self.spike_trap_images)
         self.spike_trap_items.append((position, image))
 
-    def check_cell_collection(self):
+    def collect_item(self): # -> snake
         """Check if any snake has collected food or hit a trap"""
         for snake in self.snakes:
             head_pos = snake.get_head_position()
@@ -119,7 +119,7 @@ class FoodManager:
                     snake.score = max(0, snake.score-1)
                     self.spawn_spike_trap()
                     if not isValid:
-                        snake.score = -100
+                        snake.score = -1
                     break
 
     def spawn_random_food(self):

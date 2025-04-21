@@ -17,7 +17,7 @@ class Snake:
         self.direction = direction
 
 
-    def get_direction(self, current_direction):
+    def get_available_dire(self, current_direction): 
         """Give available direction"""
         directions = [(0,-1),(0,1),(-1,0),(1,0)]
         available_directions = []
