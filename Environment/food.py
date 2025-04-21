@@ -20,9 +20,9 @@ class FoodManager:
 
 
         # Initialize food and Traps
-        for i in range(FOOD_AMOUNT):
+        for _ in range(FOOD_AMOUNT):
             self.spawn_random_food()
-        for i in range(SPIKE_TRAPS_AMOUNT):
+        for _ in range(SPIKE_TRAPS_AMOUNT):
             self.spawn_spike_trap()
 
 
@@ -79,7 +79,7 @@ class FoodManager:
         image = random.choice(self.super_food_images)
         self.super_food_items.append((position, image))
 
-    def spawn_spike_trap(self, old_position=None):
+    def spawn_spike_trap(self):
         """Spawn a spike trap at a random empty position"""
         position = self.get_random_empty_position()
         image = random.choice(self.spike_trap_images)
