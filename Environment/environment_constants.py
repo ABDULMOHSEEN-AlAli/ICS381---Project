@@ -30,7 +30,7 @@ MAX_TURNS = 90999999999999  # Maximum number of turns before the game ends
 NORMAL_FOOD_PROB = 0.8  # 80% chance for normal food
 SUPER_FOOD_PROB = 0.2   # 20% chance for super food
 FOOD_AMOUNT = 4
-SPIKE_TRAPS_AMOUNT = 2
+SPIKE_TRAPS_AMOUNT = 5  # Number of spike traps to be placed on the grid
 
 
 # Directions

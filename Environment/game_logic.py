@@ -5,7 +5,8 @@ from game_grid import Grid
 from snake import Snake
 from food import FoodManager
 from newUI import UI
-# from ai_agent import SimpleAI, AdvancedAI
+from simple_snake_astar import SimpleAI
+from snake_local_search import SnakeLocalSearch
 
 
 class Game:
@@ -37,8 +38,8 @@ class Game:
         self.turn_count = 0
 
         # AI agents (optional - comment out if using human controls)
-        # self.ai1 = SimpleAI(self.snake1, self.snake2, self.grid, self.food_manager) # ToDo AI
-        # self.ai2 = SimpleAI(self.snake2, self.snake1, self.grid, self.food_manager)
+        self.ai1 = SimpleAI(self.snake1, self.snake2, self.grid, self.food_manager) # ToDo AI
+        self.ai2 = SnakeLocalSearch(self.snake2, self.snake1, self.grid, self.food_manager)
 
     def get_random_position(self):
         """Generate a random position on the grid"""
@@ -94,8 +95,8 @@ class Game:
             return
 
         # Get AI moves
-        # self.ai1.make_move() ToDo: make the AI logic
-        # self.ai2.make_move()
+        self.ai1.make_move() 
+        self.ai2.make_move()
 
         # Update snakes
         # self.snake1.update_move(UP)

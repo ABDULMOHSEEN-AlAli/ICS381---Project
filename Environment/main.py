@@ -27,7 +27,7 @@ def main():
         game.render()
 
         # Cap the frame rate
-        clock.tick(10)  # 15 frames per second matches the snake speed from your proposal
+        clock.tick(5)  # 15 frames per second matches the snake speed from your proposal
 
     # Cleanup and exit
     pygame.quit()

@@ -126,7 +126,6 @@ class FoodManager:
         """Spawn either normal food or super food based on probability"""
         if random.random() < NORMAL_FOOD_PROB:
             self.spawn_normal_food()
-            self.spawn_normal_food()
         else:
             self.spawn_super_food()
 
