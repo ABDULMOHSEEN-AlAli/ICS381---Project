@@ -14,9 +14,9 @@ class FoodManager:
         self.spike_trap_items = []
 
         # Load normal food images
-        self.normal_food_images = self.load_images("images/Normal_Food")
-        self.super_food_images = self.load_images("images/Super_Food")
-        self.spike_trap_images = self.load_images("images/Traps")
+        self.normal_food_images = self.load_images("Environment/images/Normal_Food")
+        self.super_food_images = self.load_images("Environment/images/Super_Food")
+        self.spike_trap_images = self.load_images("Environment/images/Traps")
 
 
         # Initialize food and Traps
