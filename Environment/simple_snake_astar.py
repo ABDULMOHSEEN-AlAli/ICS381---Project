@@ -1,5 +1,6 @@
 import heapq
 from collections import defaultdict
+from environment_constants import *
 
 class SnakeAI:
     """
@@ -15,19 +16,21 @@ class SnakeAI:
         
         # Value settings for calculating costs/rewards
         self.values = {
-            'normal_food': 100,   # Normal food reward
-            'super_food': 140,    # Super food reward
-            'normal_move': 50,    # Normal move reward
-            'trap': 15,           # Trap penalty
-            'collision': 0        # Collision (worst case)
+            'normal_food_reward': NORMAL_FOOD_REWARD,   # Normal food reward
+            'super_food_reward': SUPER_FOOD_REWARD,    # Super food reward
+
+            'normal_food_cost': NORMAL_FOOD_COST,  # Cost of normal food
+            'super_food_cost': SUPER_FOOD_COST,    # Cost of super food
+            'normal_move_cost': SAVE_MOVE_COST,    # Normal move cost
+            'trap_cost': SPIKE_TRAP_COST,           # Trap cost
         }
         
         # Available directions
         self.directions = {
-            'UP': (0, -1),
-            'DOWN': (0, 1),
-            'LEFT': (-1, 0),
-            'RIGHT': (1, 0)
+            'UP':   UP,
+            'DOWN': DOWN,
+            'LEFT': LEFT,
+            'RIGHT': RIGHT
         }
     
     def make_move(self):
@@ -38,25 +41,22 @@ class SnakeAI:
         # Find best target (food item)
         target = self.find_best_target()
         
-        if target:
-            # Find path to target using A*
-            path = self.a_star_search(head_pos, target)
-            
-            if path and len(path) > 1:
-                # Get the first move in the path
-                next_pos = path[1]  # Skip current position
-                
-                # Convert to direction vector
-                dx = next_pos[0] - head_pos[0]
-                dy = next_pos[1] - head_pos[1]
-                direction = (dx, dy)
-                
-                # Update snake direction
-                self.snake.update_move(direction)
-                return
+
+        # Find path to target using A*
+        path = self.a_star_search(head_pos, target)
         
-        # If no path found, make a safe move
-        self.make_safe_move()
+        if path and len(path) > 1:
+            # Get the first move in the path
+            next_pos = path[1]  # Skip current position
+            
+            # Convert to direction vector
+            dx = next_pos[0] - head_pos[0]
+            dy = next_pos[1] - head_pos[1]
+            direction = (dx, dy)
+            
+            # Update snake direction
+            self.snake.update_move(direction)
+
     
     def find_best_target(self):
         """Find the best food target based on value and distance"""
@@ -67,7 +67,7 @@ class SnakeAI:
         # Check normal food items
         for food_pos, _ in self.food_manager.normal_food_items:
             distance = self.manhattan_distance(head_pos, food_pos)
-            value = self.values['normal_food'] - (distance * 5)  # Value decreases with distance
+            value = self.values['normal_food_reward'] - (distance * 5)  # Value decreases with distance
             
             if value > best_value:
                 best_value = value
@@ -76,7 +76,7 @@ class SnakeAI:
         # Check super food items (higher value)
         for food_pos, _ in self.food_manager.super_food_items:
             distance = self.manhattan_distance(head_pos, food_pos)
-            value = self.values['super_food'] - (distance * 5)
+            value = self.values['super_food_reward'] - (distance * 5)
             
             if value > best_value:
                 best_value = value
@@ -84,22 +84,22 @@ class SnakeAI:
         
         return best_target
     
-    def a_star_search(self, start, goal):
+    def a_star_search(self, head_pos, goal):
         """A* search algorithm to find path from start to goal"""
         # Priority queue for open set, format: (f_score, position)
         open_set = []
-        heapq.heappush(open_set, (0, start))
+        heapq.heappush(open_set, (0, head_pos)) # It is an efficient priority queue implementation
         
         # For path reconstruction
         came_from = {}
         
         # g_score[position] = cost from start to position
         g_score = defaultdict(lambda: float('inf'))
-        g_score[start] = 0
+        g_score[head_pos] = 0
         
         # f_score[position] = g_score[position] + heuristic(position, goal)
         f_score = defaultdict(lambda: float('inf'))
-        f_score[start] = self.heuristic(start, goal)
+        f_score[head_pos] = self.heuristic(head_pos, goal)
         
         # To prevent infinite loops
         closed_set = set()
@@ -173,20 +173,20 @@ class SnakeAI:
         # Check for traps (penalty)
         for trap_pos, _ in self.food_manager.spike_trap_items:
             if position == trap_pos:
-                return self.values['trap']
+                return self.values['trap_cost']
         
         # Check for normal food (reward)
         for food_pos, _ in self.food_manager.normal_food_items:
             if position == food_pos:
-                return -self.values['normal_food']  # Negative because A* minimizes cost
+                return self.values['normal_food_cost']  # Negative because A* minimizes cost
         
         # Check for super food (higher reward)
         for food_pos, _ in self.food_manager.super_food_items:
             if position == food_pos:
-                return -self.values['super_food']  # Negative because A* minimizes cost
+                return self.values['super_food_cost']  # Negative because A* minimizes cost
         
         # Normal move
-        return -self.values['normal_move']  # Small reward for each step
+        return self.values['normal_move_cost']  # Small reward for each step
     
     def heuristic(self, a, b):
         """Heuristic function for A* (Manhattan distance + penalties)"""
@@ -201,13 +201,13 @@ class SnakeAI:
         for segment in visible_segments:
             dist = self.manhattan_distance(a, segment)
             if dist <= 2:  # Close to opponent
-                penalty += (3 - dist) * 20
+                penalty += (3 - dist) * 10
         
         # Penalty for being near traps
         for trap_pos, _ in self.food_manager.spike_trap_items:
             dist = self.manhattan_distance(a, trap_pos)
             if dist <= 2:  # Close to trap
-                penalty += (3 - dist) * 15
+                penalty += (3 - dist) * 3
         
         return base_h + penalty
     
@@ -226,47 +226,6 @@ class SnakeAI:
         path.reverse()
         return path
     
-    def make_safe_move(self):
-        """Make a safe move when no path to food is found"""
-        head_pos = self.snake.get_head_position()
-        available_dirs = self.snake.get_available_dire(self.snake.direction)
-        
-        # Rate each direction by safety
-        dir_scores = []
-        for direction in available_dirs:
-            next_pos = (head_pos[0] + direction[0], head_pos[1] + direction[1])
-            
-            # Skip invalid moves
-            if not self.is_valid_move(next_pos):
-                continue
-            
-            # Calculate a basic safety score
-            score = 50  # Base score
-            
-            # Penalty for being near opponent
-            visible_segments = self.snake.radar(self.opponent)
-            for segment in visible_segments:
-                dist = self.manhattan_distance(next_pos, segment)
-                if dist <= 2:
-                    score -= (3 - dist) * 10
-            
-            # Penalty for being near traps
-            for trap_pos, _ in self.food_manager.spike_trap_items:
-                dist = self.manhattan_distance(next_pos, trap_pos)
-                if dist <= 2:
-                    score -= (3 - dist) * 10
-            
-            dir_scores.append((direction, score))
-        
-        # If we have any valid moves, choose the safest
-        if dir_scores:
-            best_dir = max(dir_scores, key=lambda x: x[1])[0]
-            self.snake.update_move(best_dir)
-            return
-        
-        # If somehow no moves are valid, just continue in current direction
-        # (This shouldn't happen in normal gameplay)
-        self.snake.update_move(self.snake.direction)
 
 class SimpleAI:
     """
