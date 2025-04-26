@@ -65,18 +65,18 @@ class SnakeLocalSearch:
         if not direction_scores:
             best_direction = self.snake.direction
             self.snake.update_move(best_direction)
-        
-        # Choose best direction based on score
-        best_direction = max(direction_scores, key=lambda x: x[1])[0]
-        
-        # Check if we're making progress (getting closer to food or increasing score)
-        if self.is_making_progress(head_pos, (head_pos[0] + best_direction[0], head_pos[1] + best_direction[1])):
-            self.no_progress_count = 0
         else:
-            self.no_progress_count += 1
-        
-        # Update snake direction
-        self.snake.update_move(best_direction)
+            # Choose best direction based on score
+            best_direction = max(direction_scores, key=lambda x: x[1])[0]
+            
+            # Check if we're making progress (getting closer to food or increasing score)
+            if self.is_making_progress(head_pos, (head_pos[0] + best_direction[0], head_pos[1] + best_direction[1])):
+                self.no_progress_count = 0
+            else:
+                self.no_progress_count += 1
+            
+            # Update snake direction
+            self.snake.update_move(best_direction)
     
     def is_valid_position(self, position):
         """Check if a position is valid (not a collision)"""

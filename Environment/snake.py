@@ -10,7 +10,15 @@ class Snake:
         self.direction = (0, 0)  # Initially not moving
         self.score = 0
         self.segments_to_add = 0 # to add new segment
+        self.decision_time = 0
 
+    def timer(self, time):
+        """Set the time for decision making"""
+        self.decision_time += time
+
+    def get_total_time(self):
+        """Get the total time for decision making"""
+        return self.decision_time / 1_000_000
     def set_direction(self, direction):
         """Set the snake's direction"""
         # Prevent moving in the opposite direction

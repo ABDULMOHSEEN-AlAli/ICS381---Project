@@ -10,7 +10,7 @@ class UI:
         pygame.font.init()
         self.title_font = pygame.font.SysFont('monospace', 32, bold=True)
         self.font = pygame.font.SysFont('monospace', 24, bold=True)
-        self.small_font = pygame.font.SysFont('monospace', 20)
+        self.small_font = pygame.font.SysFont('monospace', 20, bold=True)
         
         # Create rounded rectangle surface for reuse
         self.rounded_rect_cache = {}
@@ -148,53 +148,6 @@ class UI:
         
         self.screen.blit(grid_surface, (0, 0))
 
-    def draw_game_over(self, winner):
-        """Draw game over message with enhanced visuals"""
-        # Create gradient overlay
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-        for y in range(SCREEN_HEIGHT):
-            alpha = int(180 * (1 - abs((y - SCREEN_HEIGHT // 2) / (SCREEN_HEIGHT // 2))))
-            pygame.draw.line(overlay, (0, 0, 0, alpha), (0, y), (SCREEN_WIDTH, y))
-        self.screen.blit(overlay, (0, 0))
-        
-        # Create game over panel
-        panel_width, panel_height = 500, 200
-        panel_rect = pygame.Rect((SCREEN_WIDTH - panel_width) // 2, 
-                                (SCREEN_HEIGHT - panel_height) // 2,
-                                panel_width, panel_height)
-        self.draw_rounded_rect(self.screen, panel_rect, (40, 40, 60), 20, 3, (100, 100, 140))
-        
-        # Game over title with glow effect
-        game_over_text = self.title_font.render("GAME OVER", True, (255, 220, 100))
-        
-        # Winner text
-        if winner is None:
-            winner_text = self.font.render("It's a tie!", True, WHITE)
-            color = (200, 200, 200)
-        else:
-            winner_color = BLUE if winner.name == "Blue Snake" else ORANGE
-            winner_text = self.font.render(f"{winner.name} wins with {winner.score} points!", True, winner_color)
-            color = winner_color
-        
-        # Add particle effect for winner
-        if winner:
-            for i in range(20):
-                particle_size = random.randint(3, 8)
-                x = random.randint(panel_rect.left + 20, panel_rect.right - 20)
-                y = random.randint(panel_rect.top + 20, panel_rect.bottom - 20)
-                pygame.draw.circle(self.screen, color, (x, y), particle_size)
-        
-        restart_text = self.small_font.render("Press SPACE to restart", True, (180, 180, 255))
-        
-        self.screen.blit(game_over_text,
-                       (SCREEN_WIDTH // 2 - game_over_text.get_width() // 2,
-                        panel_rect.top + 40))
-        self.screen.blit(winner_text,
-                       (SCREEN_WIDTH // 2 - winner_text.get_width() // 2,
-                        panel_rect.top + 90))
-        self.screen.blit(restart_text,
-                       (SCREEN_WIDTH // 2 - restart_text.get_width() // 2,
-                        panel_rect.top + 140))
 
     def draw_game_title(self):
         """Draw game title at the top of the screen"""
@@ -217,3 +170,90 @@ class UI:
         self.screen.blit(subtitle_shadow, (SCREEN_WIDTH // 2 - subtitle_text.get_width() // 2 + shadow_offset, 
                                        40 + shadow_offset))
         self.screen.blit(subtitle_text, (SCREEN_WIDTH // 2 - subtitle_text.get_width() // 2, 40))
+
+    def draw_game_over(self, winner, totalMoves, snake1, snake2):
+        """Draw game over message with enhanced visuals"""
+        # Create gradient overlay
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        for y in range(SCREEN_HEIGHT):
+            alpha = int(180 * (1 - abs((y - SCREEN_HEIGHT // 2) / (SCREEN_HEIGHT // 2))))
+            pygame.draw.line(overlay, (0, 0, 0, alpha), (0, y), (SCREEN_WIDTH, y))
+        self.screen.blit(overlay, (0, 0))
+        
+        # Create a larger game over panel to fit all text
+        panel_width, panel_height = 600, 350  # Made panel taller and wider
+        panel_rect = pygame.Rect((SCREEN_WIDTH - panel_width) // 2, 
+                            (SCREEN_HEIGHT - panel_height) // 2,
+                            panel_width, panel_height)
+        self.draw_rounded_rect(self.screen, panel_rect, (40, 40, 60), 20, 3, (100, 100, 140))
+        
+        # Game over title with glow effect
+        game_over_text = self.title_font.render("GAME OVER", True, (255, 220, 100))
+        
+        # Winner text
+        if winner is None:
+            winner_text = self.font.render("It's a tie!", True, WHITE)
+            color = (200, 200, 200)
+        else:
+            winner_color = BLUE if winner.name == "Blue Snake" else ORANGE
+            winner_text = self.font.render(f"{winner.name} wins with {winner.score} points!", True, winner_color)
+            color = winner_color
+        
+        # Add particle effect for winner
+        if winner:
+            for i in range(20):
+                particle_size = random.randint(3, 8)
+                x = random.randint(panel_rect.left + 20, panel_rect.right - 20)
+                y = random.randint(panel_rect.top + 20, panel_rect.bottom - 20)
+                pygame.draw.circle(self.screen, color, (x, y), particle_size)
+        
+        # Game statistics texts with better formatting
+        total_moves_text = self.font.render(f"Total Moves: {totalMoves}", True, (255, 220, 100))
+        
+        # Time statistics with color coding
+        time_title = self.font.render("Time Taken:", True, (200, 200, 200))
+        blue_time_text = self.small_font.render(f"Blue Snake: {snake1.get_total_time()} ms", True, BLUE)
+        orange_time_text = self.small_font.render(f"Orange Snake: {snake2.get_total_time()} ms", True, ORANGE)
+        
+        restart_text = self.small_font.render("Press SPACE to restart", True, (180, 180, 255))
+        
+        # Position elements with proper spacing
+        self.screen.blit(game_over_text,
+                    (SCREEN_WIDTH // 2 - game_over_text.get_width() // 2,
+                        panel_rect.top + 40))
+        
+        self.screen.blit(winner_text,
+                    (SCREEN_WIDTH // 2 - winner_text.get_width() // 2,
+                        panel_rect.top + 90))
+        
+        # Add a decorative line
+        pygame.draw.line(self.screen, (100, 100, 140), 
+                        (panel_rect.left + 50, panel_rect.top + 130),
+                        (panel_rect.right - 50, panel_rect.top + 130), 2)
+        
+        # Game statistics section
+        self.screen.blit(total_moves_text,
+                    (SCREEN_WIDTH // 2 - total_moves_text.get_width() // 2,
+                        panel_rect.top + 150))
+        
+        self.screen.blit(time_title,
+                    (SCREEN_WIDTH // 2 - time_title.get_width() // 2,
+                        panel_rect.top + 190))
+        
+        self.screen.blit(blue_time_text,
+                    (SCREEN_WIDTH // 2 - blue_time_text.get_width() // 2,
+                        panel_rect.top + 220))
+        
+        self.screen.blit(orange_time_text,
+                    (SCREEN_WIDTH // 2 - orange_time_text.get_width() // 2,
+                        panel_rect.top + 250))
+        
+        # Add another decorative line
+        pygame.draw.line(self.screen, (100, 100, 140), 
+                        (panel_rect.left + 50, panel_rect.top + 280),
+                        (panel_rect.right - 50, panel_rect.top + 280), 2)
+        
+        self.screen.blit(restart_text,
+                    (SCREEN_WIDTH // 2 - restart_text.get_width() // 2,
+                        panel_rect.top + 300))
+        

@@ -7,7 +7,7 @@ from food import FoodManager
 from newUI import UI
 from simple_snake_astar import SimpleAI
 from snake_local_search import SnakeLocalSearch
-
+import time
 
 class Game:
     def __init__(self):
@@ -95,12 +95,19 @@ class Game:
             return
 
         # Get AI moves
+        # calculate the time takes to make disition 
+        start_time_1 = time.perf_counter_ns() 
         self.ai1.make_move() 
+        end_time_1 = time.perf_counter_ns()
+        self.snake1.timer(end_time_1 - start_time_1)
+        # print(f"AI 1 decision time: {(end_time_1 - start_time_1)/ 1_000_000} ns")
+        
+        start_time_2 = time.perf_counter_ns() 
         self.ai2.make_move()
+        end_time_2 = time.perf_counter_ns() 
+        self.snake2.timer(end_time_2 - start_time_2)    
+        # print(f"AI 2 decision time: {(end_time_2 - start_time_2)/ 1_000_000} ns")
 
-        # Update snakes
-        # self.snake1.update_move(UP)
-        # self.snake2.update_move(DOWN)
 
         # Check for collisions and food
         self.check_collisions()
@@ -202,7 +209,7 @@ class Game:
 
         # Draw game over message if applicable
         if self.game_over:
-            self.ui.draw_game_over(self.winner)
+            self.ui.draw_game_over(self.winner, self.turn_count, self.snake1, self.snake2)
 
         # Update the display
         pygame.display.flip()

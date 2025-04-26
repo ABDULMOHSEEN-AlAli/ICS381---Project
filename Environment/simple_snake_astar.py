@@ -56,6 +56,9 @@ class SnakeAI:
             
             # Update snake direction
             self.snake.update_move(direction)
+        else:
+            # No valid path found, keep current direction
+            self.snake.update_move(self.snake.direction)
 
     
     def find_best_target(self):
