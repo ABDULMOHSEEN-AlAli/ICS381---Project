@@ -19,24 +19,12 @@ class Snake:
     def get_total_time(self):
         """Get the total time for decision making"""
         return self.decision_time / 1_000_000
+
     def set_direction(self, direction):
         """Set the snake's direction"""
         # Prevent moving in the opposite direction
         self.direction = direction
 
-
-    def get_available_dire(self, current_direction): 
-        """Give available direction"""
-        directions = [(0,-1),(0,1),(-1,0),(1,0)]
-        available_directions = []
-        current_x, current_y = current_direction
-
-        for direction in directions:
-            x, y = direction
-            if not ((x == -current_x and y == -current_y) and len(self.body) != 1):
-                available_directions.append(direction)
-
-        return available_directions
 
     def update_move(self, movement):
         """Update the snake's position"""
@@ -44,6 +32,7 @@ class Snake:
         head_x, head_y = self.body[0]
 
         self.set_direction(movement)
+        
         # Calculate new head position
         direction_x, direction_y = self.direction
         new_head = (head_x + direction_x, head_y + direction_y)

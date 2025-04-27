@@ -5,7 +5,7 @@ from game_grid import Grid
 from snake import Snake
 from food import FoodManager
 from newUI import UI
-from simple_snake_astar import SimpleAI
+from snake_astar import SnakeAI
 from snake_local_search import SnakeLocalSearch
 import time
 
@@ -38,7 +38,7 @@ class Game:
         self.turn_count = 0
 
         # AI agents (optional - comment out if using human controls)
-        self.ai1 = SimpleAI(self.snake1, self.snake2, self.grid, self.food_manager) # ToDo AI
+        self.ai1 = SnakeAI(self.snake1, self.snake2, self.grid, self.food_manager) 
         self.ai2 = SnakeLocalSearch(self.snake2, self.snake1, self.grid, self.food_manager)
 
     def get_random_position(self):
@@ -95,6 +95,7 @@ class Game:
             return
 
         # Get AI moves
+        
         # calculate the time takes to make disition 
         start_time_1 = time.perf_counter_ns() 
         self.ai1.make_move() 

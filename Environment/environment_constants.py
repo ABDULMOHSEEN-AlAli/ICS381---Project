@@ -1,5 +1,5 @@
 # Game dimensions
-GRID_SIZE = 20  # 20x20 grid as specified in the proposal
+GRID_SIZE = 20  # 20x20 grid 
 CELL_SIZE = 35  # Size of each cell in pixels
 GRID_WIDTH = GRID_SIZE
 GRID_HEIGHT = GRID_SIZE
@@ -17,8 +17,6 @@ DARK_GREY = (175, 175, 175)
 
 
 # Game settings
-SNAKE_SPEED = 15  # Updates per second
-INITIAL_SNAKE_LENGTH = 1
 VISIBILITY_RANGE = 2  # How far snakes can see other snakes
 EXPANSION_RATE_NORMAL = 1
 EXPANSION_RATE_SUPER = 1

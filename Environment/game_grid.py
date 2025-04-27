@@ -1,7 +1,6 @@
 import pygame
 from environment_constants import *
 
-
 class Grid:
     def __init__(self):
         self.width = GRID_WIDTH

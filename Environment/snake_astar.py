@@ -96,11 +96,10 @@ class SnakeAI:
         # For path reconstruction
         came_from = {}
         
-        # g_score[position] = cost from start to position
-        g_score = defaultdict(lambda: float('inf'))
-        g_score[head_pos] = 0
+        # actual_score[position] = cost from start to position
+        actual_score = defaultdict(lambda: float('inf'))
+        actual_score[head_pos] = 0
         
-        # f_score[position] = g_score[position] + heuristic(position, goal)
         f_score = defaultdict(lambda: float('inf'))
         f_score[head_pos] = self.heuristic(head_pos, goal)
         
@@ -130,15 +129,15 @@ class SnakeAI:
                 if neighbor in closed_set or not self.is_valid_move(neighbor):
                     continue
                 
-                # Calculate tentative g_score
-                tentative_g = g_score[current] + self.move_cost(neighbor)
+                # Calculate tentative actual_score
+                tentative_actual_score = actual_score[current] + self.move_cost(neighbor)
                 
                 # If this path is better than any previous one
-                if tentative_g < g_score[neighbor]:
+                if tentative_actual_score < actual_score[neighbor]:
                     # Record this path
                     came_from[neighbor] = current
-                    g_score[neighbor] = tentative_g
-                    f_score[neighbor] = tentative_g + self.heuristic(neighbor, goal)
+                    actual_score[neighbor] = tentative_actual_score
+                    f_score[neighbor] = tentative_actual_score + self.heuristic(neighbor, goal)
                     
                     # Add to open set if not already there
                     if neighbor not in [pos for _, pos in open_set]:
@@ -166,7 +165,7 @@ class SnakeAI:
             return False
         
         # Check collision with opponent
-        if position in self.opponent.body:
+        if position in self.snake.radar(self.opponent):
             return False
         
         return True
@@ -229,15 +228,3 @@ class SnakeAI:
         path.reverse()
         return path
     
-
-class SimpleAI:
-    """
-    Interface class for the Snake A* Algorithm.
-    Use this class in your game_logic.py.
-    """
-    def __init__(self, snake, opponent, grid, food_manager):
-        self.ai = SnakeAI(snake, opponent, grid, food_manager)
-    
-    def make_move(self):
-        """Calculate and execute the next move"""
-        self.ai.make_move()

@@ -50,21 +50,19 @@ class SnakeLocalSearch:
             # Calculate position score
             score = self.evaluate_position(next_pos)
             direction_scores.append((direction, score))
-        direction_names = {(0, -1): "UP", (0, 1): "DOWN", (-1, 0): "LEFT", (1, 0): "RIGHT"}
-        readable_scores = [(direction_names.get(direction, direction), score) for direction, score in direction_scores]
+        # direction_names = {(0, -1): "UP", (0, 1): "DOWN", (-1, 0): "LEFT", (1, 0): "RIGHT"}
+        # readable_scores = [(direction_names.get(direction, direction), score) for direction, score in direction_scores]
         # print("Direction scores:", readable_scores)
         if not direction_scores:
             best_direction = self.snake.direction
             self.snake.update_move(best_direction)
         else:
             # Choose best direction based on score
-
             min_score = min(direction_scores, key=lambda x: x[1])[1]
             best_directions = [direction for direction, score in direction_scores if score == min_score]
             # print("Best directions:", best_directions)
             best_direction = random.choice(best_directions)
 
-            
             # Update snake direction
             self.snake.update_move(best_direction)
     
@@ -79,7 +77,7 @@ class SnakeLocalSearch:
             return False
         
         # Check collision with opponent
-        if position in self.opponent.body:
+        if position in self.snake.radar(self.opponent):
             return False
         
         return True
@@ -124,15 +122,3 @@ class SnakeLocalSearch:
     def manhattan_distance(self, pos1, pos2):
         """Calculate Manhattan distance between two positions"""
         return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
-
-class LocalSearchAI:
-    """
-    Interface class for the Snake Local Search Algorithm.
-    Use this class in your game_logic.py.
-    """
-    def __init__(self, snake, opponent, grid, food_manager):
-        self.ai = SnakeLocalSearch(snake, opponent, grid, food_manager)
-    
-    def make_move(self):
-        """Calculate and execute the next move"""
-        self.ai.make_move()

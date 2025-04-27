@@ -8,6 +8,7 @@ class FoodManager:
     def __init__(self, grid, snakes):
         self.grid = grid
         self.snakes = snakes # list of snakes
+
         # Store food with image references in table format
         self.normal_food_items = []
         self.super_food_items = []
@@ -59,7 +60,7 @@ class FoodManager:
         return True
 
     def get_random_empty_position(self):
-        """Get a random position that is not occupied by snakes or items"""
+        """Get a random position that is not occupied"""
         position = None
         while position is None or not self.is_position_empty(position):
             x = random.randint(0, self.grid.width - 1)
