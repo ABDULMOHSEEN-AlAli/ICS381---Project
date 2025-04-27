@@ -27,7 +27,7 @@ def main():
         game.render()
 
         # Cap the frame rate
-        clock.tick(20)  # 15 frames per second matches the snake speed from your proposal
+        clock.tick(5)  # 15 frames per second matches the snake speed from your proposal
     print("Agent 1 takes:",game.snake1.get_total_time(),"ms, and Agent 2 takes: ", game.snake2.get_total_time()," ms")
     print("Total steps is :", game.turn_count)
     # Cleanup and exit

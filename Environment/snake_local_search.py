@@ -1,6 +1,6 @@
 import random
 import numpy as np
-from collections import deque
+from environment_constants import *
 
 class SnakeLocalSearch:
     """
@@ -14,39 +14,29 @@ class SnakeLocalSearch:
         self.grid = grid
         self.food_manager = food_manager
         
-        # Value settings for calculating position scores
+        # Value settings for calculating costs/rewards
         self.values = {
-            'normal_food': 100,   # Normal food reward
-            'super_food': 200,    # Super food reward
-            'normal_move': 50,    # Normal move reward
-            'trap': 15,           # Trap penalty
-            'collision': 0        # Collision (worst case - avoid)
+            'normal_food_reward': NORMAL_FOOD_REWARD,   # Normal food reward
+            'super_food_reward': SUPER_FOOD_REWARD,    # Super food reward
+
+            'normal_food_cost': NORMAL_FOOD_COST,  # Cost of normal food
+            'super_food_cost': SUPER_FOOD_COST,    # Cost of super food
+            'normal_move_cost': SAVE_MOVE_COST,    # Normal move cost
+            'trap_cost': SPIKE_TRAP_COST,           # Trap cost
         }
-        
-        # Track previous positions to detect loops
-        self.position_history = deque(maxlen=10)
-        
-        # Track successive moves without progress
-        self.no_progress_count = 0
     
     def make_move(self):
         """Calculate the best move using local search and update the snake direction"""
         # Get current snake head position
         head_pos = self.snake.get_head_position()
         
-        # Record current position for loop detection
-        self.position_history.append(head_pos)
-        
         # Get available directions
         available_directions = self.snake.get_available_dire(self.snake.direction)
         
-        # If no available directions, just continue (shouldn't happen normally)
+        # If no available directions, just continue 
         if not available_directions:
             best_direction = self.snake.direction
             self.snake.update_move(best_direction)
-        
-        # Check for loops and increase exploration if needed
-        exploration_factor = self.get_exploration_factor()
         
         # Evaluate each neighbor position
         direction_scores = []
@@ -58,22 +48,22 @@ class SnakeLocalSearch:
                 continue
             
             # Calculate position score
-            score = self.evaluate_position(next_pos, exploration_factor)
+            score = self.evaluate_position(next_pos)
             direction_scores.append((direction, score))
-        
-        # If no valid moves, just continue (shouldn't happen normally)
+        direction_names = {(0, -1): "UP", (0, 1): "DOWN", (-1, 0): "LEFT", (1, 0): "RIGHT"}
+        readable_scores = [(direction_names.get(direction, direction), score) for direction, score in direction_scores]
+        # print("Direction scores:", readable_scores)
         if not direction_scores:
             best_direction = self.snake.direction
             self.snake.update_move(best_direction)
         else:
             # Choose best direction based on score
-            best_direction = max(direction_scores, key=lambda x: x[1])[0]
-            
-            # Check if we're making progress (getting closer to food or increasing score)
-            if self.is_making_progress(head_pos, (head_pos[0] + best_direction[0], head_pos[1] + best_direction[1])):
-                self.no_progress_count = 0
-            else:
-                self.no_progress_count += 1
+
+            min_score = min(direction_scores, key=lambda x: x[1])[1]
+            best_directions = [direction for direction, score in direction_scores if score == min_score]
+            # print("Best directions:", best_directions)
+            best_direction = random.choice(best_directions)
+
             
             # Update snake direction
             self.snake.update_move(best_direction)
@@ -94,171 +84,42 @@ class SnakeLocalSearch:
         
         return True
     
-    def evaluate_position(self, position, exploration_factor=0):
+    def evaluate_position(self, position):
         """
         Evaluate a position based on multiple factors.
         Returns a score value - higher is better.
         """
-        # Base score for valid moves
-        score = self.values['normal_move']
+
+        normal_food_items = [item[0] for item in self.food_manager.normal_food_items]
+        super_food_items = [item[0] for item in self.food_manager.super_food_items]
+        spike_trap_items = [item[0] for item in self.food_manager.spike_trap_items]
+
+        if position in spike_trap_items:
+            return self.values['trap_cost']
         
-        # Check for food
-        score += self.food_score(position)
+        elif position in super_food_items or position in normal_food_items:
+            return self.values['normal_food_cost']
         
-        # Check for traps
-        score += self.trap_score(position)
-        
-        # Check for opponent proximity
-        score += self.opponent_score(position)
-        
-        # Check proximity to walls
-        score += self.wall_score(position)
-        
-        # Check for dead ends
-        score += self.open_space_score(position)
-        
-        # Apply exploration factor to avoid loops
-        if exploration_factor > 0:
-            # Add randomness for exploration
-            score += random.uniform(0, exploration_factor)
-            
-            # Penalize recently visited positions
-            if position in self.position_history:
-                score -= 50 * exploration_factor
-        
-        return score
+        else:
+            return self.food_score(position)
+
+    
     
     def food_score(self, position):
         """Calculate score based on food proximity and value"""
-        score = 0
-        
-        # Bonus for being on food
-        for food_pos, _ in self.food_manager.normal_food_items:
-            if position == food_pos:
-                return self.values['normal_food']
-            
-            # Smaller bonus for being near food
+        best_dist = float('inf')
+
+        for food_pos, _ in self.food_manager.normal_food_items:      
             dist = self.manhattan_distance(position, food_pos)
-            if dist <= 5:
-                score += self.values['normal_food'] * (6 - dist) / 10
-        
-        for food_pos, _ in self.food_manager.super_food_items:
-            if position == food_pos:
-                return self.values['super_food']
-            
-            # Smaller bonus for being near super food
-            dist = self.manhattan_distance(position, food_pos)
-            if dist <= 5:
-                score += self.values['super_food'] * (6 - dist) / 10
-        
-        return score
-    
-    def trap_score(self, position):
-        """Calculate score penalty for traps"""
-        for trap_pos, _ in self.food_manager.spike_trap_items:
-            if position == trap_pos:
-                return -self.values['trap']
-        
-        return 0
-    
-    def opponent_score(self, position):
-        """Calculate score penalty for being near opponent"""
-        score = 0
-        
-        visible_segments = self.snake.radar(self.opponent)
-        for segment in visible_segments:
-            dist = self.manhattan_distance(position, segment)
-            if dist <= 2:
-                score -= (3 - dist) * 20
-        
-        return score
-    
-    def wall_score(self, position):
-        """Calculate score penalty for being near walls"""
-        score = 0
-        
-        # Penalty for being near walls
-        x, y = position
-        
-        if x <= 1 or x >= self.grid.width - 2:
-            score -= 10
-        
-        if y <= 1 or y >= self.grid.height - 2:
-            score -= 10
-        
-        return score
-    
-    def open_space_score(self, position):
-        """Calculate score based on available open space"""
-        # Count available spaces in adjacent positions
-        open_count = 0
-        for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
-            adj_pos = (position[0] + dx, position[1] + dy)
-            if self.is_valid_position(adj_pos):
-                open_count += 1
-        
-        # Bonus for positions with more open neighbors
-        return open_count * 15
-    
-    def get_exploration_factor(self):
-        """
-        Determine how much exploration to do based on loop detection
-        and lack of progress
-        """
-        # Check for position loops (visited same position multiple times)
-        position_count = {}
-        for pos in self.position_history:
-            position_count[pos] = position_count.get(pos, 0) + 1
-        
-        # If any position appears multiple times, increase exploration
-        max_visits = max(position_count.values()) if position_count else 0
-        
-        # Also factor in consecutive moves without progress
-        exploration = max(max_visits - 1, self.no_progress_count / 3) 
-        
-        return min(exploration, 1.0)  # Cap at 1.0
-    
-    def is_making_progress(self, current_pos, next_pos):
-        """
-        Check if moving to next_pos is making progress
-        (getting closer to food or score increase)
-        """
-        # Check if we'd be on food
-        for food_pos, _ in self.food_manager.normal_food_items + self.food_manager.super_food_items:
-            if next_pos == food_pos:
-                return True
-        
-        # Find closest food from current and next positions
-        closest_food = self.find_closest_food(current_pos)
-        if closest_food:
-            current_dist = self.manhattan_distance(current_pos, closest_food)
-            next_dist = self.manhattan_distance(next_pos, closest_food)
-            
-            # We're making progress if we're getting closer to food
-            if next_dist < current_dist:
-                return True
-        
-        return False
-    
-    def find_closest_food(self, position):
-        """Find the closest food item to the given position"""
-        closest_food = None
-        min_distance = float('inf')
-        
-        # Check all food items
-        for food_pos, _ in self.food_manager.normal_food_items:
-            dist = self.manhattan_distance(position, food_pos)
-            if dist < min_distance:
-                min_distance = dist
-                closest_food = food_pos
-        
+            if dist < best_dist:
+                best_dist = dist
         for food_pos, _ in self.food_manager.super_food_items:
             dist = self.manhattan_distance(position, food_pos)
-            if dist < min_distance:
-                min_distance = dist
-                closest_food = food_pos
+            if dist < best_dist:
+                best_dist = dist
         
-        return closest_food
+        return (best_dist * 5) + self.values["normal_food_cost"] # based on 300/28.5 = 10.5263
+    
     
     def manhattan_distance(self, pos1, pos2):
         """Calculate Manhattan distance between two positions"""
