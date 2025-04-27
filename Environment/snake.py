@@ -26,13 +26,25 @@ class Snake:
         self.direction = direction
 
 
+    def get_available_dire(self, current_direction): 
+        """Give available direction"""
+        directions = [(0,-1),(0,1),(-1,0),(1,0)]
+        available_directions = []
+        current_x, current_y = current_direction
+
+        for direction in directions:
+            x, y = direction
+            if not ((x == -current_x and y == -current_y) and len(self.body) != 1):
+                available_directions.append(direction)
+
+        return available_directions
+
     def update_move(self, movement):
         """Update the snake's position"""
         # Get the current head position
         head_x, head_y = self.body[0]
 
         self.set_direction(movement)
-        
         # Calculate new head position
         direction_x, direction_y = self.direction
         new_head = (head_x + direction_x, head_y + direction_y)
