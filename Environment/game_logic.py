@@ -37,9 +37,16 @@ class Game:
         self.winner = None
         self.turn_count = 0
 
-        # AI agents (optional - comment out if using human controls)
+        # AI agents
         self.ai1 = SnakeAI(self.snake1, self.snake2, self.grid, self.food_manager) 
         self.ai2 = SnakeLocalSearch(self.snake2, self.snake1, self.grid, self.food_manager)
+        
+        # Visualization flags
+        self.show_paths = False        # Show A* planned path
+        self.show_all_paths = False    # Show all explored paths
+        self.show_heatmap = False      # Show local search heatmap
+        self.show_considered = False   # Show nodes considered by A*
+        self.show_help = False         # Show keyboard help
 
     def get_random_position(self):
         """Generate a random position on the grid"""
@@ -53,6 +60,32 @@ class Game:
                 self.__init__()  # Reset the game
             return
 
+        # Visualization control
+        if event.type == pygame.KEYDOWN:
+            # Toggle A* path visualization
+            if event.key == pygame.K_v:
+                self.show_paths = not self.show_paths
+                
+            # Toggle all explored paths
+            elif event.key == pygame.K_a:
+                self.show_all_paths = not self.show_all_paths
+                
+            # Toggle local search heatmap
+            elif event.key == pygame.K_h:
+                self.show_heatmap = not self.show_heatmap
+                
+            # Toggle nodes considered by A*
+            elif event.key == pygame.K_c:
+                self.show_considered = not self.show_considered
+                
+            # Toggle help display
+            elif event.key == pygame.K_F1:
+                self.show_help = not self.show_help
+                
+            # Pause gameplay (for analysis)
+            elif event.key == pygame.K_p:
+                self.paused = not getattr(self, 'paused', False)
+        
         # Human controls - only needed if not using AI
         if event.type == pygame.KEYDOWN:
             # Snake 1 controls
@@ -79,6 +112,10 @@ class Game:
         """Update game state"""
         if self.game_over:
             return
+            
+        # Skip update if paused
+        if getattr(self, 'paused', False):
+            return
 
         # Increment turn counter
         self.turn_count += 1
@@ -96,19 +133,16 @@ class Game:
 
         # Get AI moves
         
-        # calculate the time takes to make disition 
+        # calculate the time takes to make decision 
         start_time_1 = time.perf_counter_ns() 
         self.ai1.make_move() 
         end_time_1 = time.perf_counter_ns()
         self.snake1.timer(end_time_1 - start_time_1)
-        # print(f"AI 1 decision time: {(end_time_1 - start_time_1)/ 1_000_000} ns")
         
         start_time_2 = time.perf_counter_ns() 
         self.ai2.make_move()
         end_time_2 = time.perf_counter_ns() 
         self.snake2.timer(end_time_2 - start_time_2)    
-        # print(f"AI 2 decision time: {(end_time_2 - start_time_2)/ 1_000_000} ns")
-
 
         # Check for collisions and food
         self.check_collisions()
@@ -121,16 +155,12 @@ class Game:
         elif self.snake2.score >= MAX_SCORE:
             self.game_over = True
             self.winner = self.snake2
-
-        elif self.snake1.score <0:
+        elif self.snake1.score < 0:
             self.game_over = True
             self.winner = self.snake2
-
         elif self.snake2.score < 0:
             self.game_over = True
             self.winner = self.snake1
-
-
 
     def check_collisions(self):
         """Check for collisions between snakes, walls, and themselves"""
@@ -180,7 +210,6 @@ class Game:
                 self.winner = self.snake1
                 return
 
-
     def render(self):
         """Render the game"""
         # Clear the screen
@@ -192,6 +221,9 @@ class Game:
 
         # Draw grid with lines
         self.ui.draw_grid(grid_surface)
+        
+        # Draw visualization elements if enabled
+        self._draw_visualizations()
 
         # Draw food and Traps
         self.food_manager.draw(self.screen)
@@ -207,6 +239,14 @@ class Game:
             len(self.snake1.body),
             len(self.snake2.body)
         )
+        
+        # Draw help if enabled
+        if self.show_help:
+            self._draw_help()
+            
+        # Draw paused indicator
+        if getattr(self, 'paused', False):
+            self._draw_paused()
 
         # Draw game over message if applicable
         if self.game_over:
@@ -214,3 +254,268 @@ class Game:
 
         # Update the display
         pygame.display.flip()
+        
+    def _draw_visualizations(self):
+        """Draw visualization elements if enabled"""
+        # Draw nodes considered by A*
+        if self.show_considered and hasattr(self.ai1, 'considered_nodes'):
+            nodes = self.ai1.considered_nodes
+            if nodes:
+                # Get min and max values for normalization
+                scores = list(nodes.values())
+                min_score = min(scores)
+                max_score = max(scores)
+                score_range = max_score - min_score if max_score > min_score else 1
+                
+                # Draw each considered node with color based on score
+                for pos, score in nodes.items():
+                    # Skip positions with snakes
+                    if pos in self.snake1.body or pos in self.snake2.body:
+                        continue
+                        
+                    # Normalize score (0 to 1)
+                    norm_score = (score - min_score) / score_range
+                    
+                    # Use purple gradient (darker = higher score)
+                    color = (
+                        int(100 + 155 * norm_score),  # Red component
+                        20,                           # Green component
+                        int(255 - 155 * norm_score),  # Blue component
+                        80                            # Alpha
+                    )
+                    
+                    cell_rect = pygame.Rect(
+                        pos[0] * CELL_SIZE, 
+                        pos[1] * CELL_SIZE,
+                        CELL_SIZE, CELL_SIZE
+                    )
+                    cell_surface = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
+                    cell_surface.fill(color)
+                    self.screen.blit(cell_surface, cell_rect)
+        
+        # Draw all explored paths
+        if self.show_all_paths and hasattr(self.ai1, 'all_explored_paths'):
+            paths = self.ai1.all_explored_paths
+            if paths:
+                # First draw all explored (non-chosen) paths in gray
+                for path_type, path in paths:
+                    if path_type == 'explored':
+                        self._draw_path(path, (150, 150, 150, 100))  # Gray with alpha
+        
+        # Draw A* path (chosen path)
+        if self.show_paths and hasattr(self.ai1, 'current_path'):
+            path = self.ai1.current_path
+            if path:
+                self._draw_path(path, (0, 150, 255, 150))  # Blue with alpha
+                
+                # Draw target indicator
+                if hasattr(self.ai1, 'current_target') and self.ai1.current_target:
+                    target = self.ai1.current_target
+                    target_rect = pygame.Rect(
+                        target[0] * CELL_SIZE,
+                        target[1] * CELL_SIZE,
+                        CELL_SIZE, CELL_SIZE
+                    )
+                    pygame.draw.rect(self.screen, (0, 255, 255), target_rect, 3)  # Cyan border for target
+        
+        # Draw local search heatmap
+        if self.show_heatmap and hasattr(self.ai2, 'evaluated_cells'):
+            cells = self.ai2.evaluated_cells
+            if cells:
+                # Get min and max values for normalization
+                scores = list(cells.values())
+                min_score = min(scores)
+                max_score = max(scores)
+                score_range = max_score - min_score if max_score > min_score else 1
+                
+                # Draw each evaluated cell with color based on score
+                for pos, score in cells.items():
+                    # Normalize score (0 to 1)
+                    norm_score = (score - min_score) / score_range
+                    
+                    # Create color gradient (red for high cost, green for low)
+                    color = (
+                        int(255 * norm_score),         # Red component 
+                        int(255 * (1 - norm_score)),   # Green component
+                        0,                             # Blue component
+                        150                            # Alpha
+                    )
+                    
+                    cell_rect = pygame.Rect(
+                        pos[0] * CELL_SIZE,
+                        pos[1] * CELL_SIZE,
+                        CELL_SIZE, CELL_SIZE
+                    )
+                    cell_surface = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
+                    cell_surface.fill(color)
+                    self.screen.blit(cell_surface, cell_rect)
+                
+                # Highlight best move if available
+                if hasattr(self.ai2, 'best_move') and self.ai2.best_move:
+                    best_pos = self.ai2.best_move
+                    best_rect = pygame.Rect(
+                        best_pos[0] * CELL_SIZE,
+                        best_pos[1] * CELL_SIZE,
+                        CELL_SIZE, CELL_SIZE
+                    )
+                    pygame.draw.rect(self.screen, (255, 255, 0, 200), best_rect, 3)
+        
+        # Draw visualization legend if any visualization is enabled
+        if self.show_paths or self.show_heatmap or self.show_considered or self.show_all_paths:
+            # Draw legend
+            legend_rect = pygame.Rect(10, 10, 290, 100)  # Made taller for additional entry
+            legend_surface = pygame.Surface((legend_rect.width, legend_rect.height), pygame.SRCALPHA)
+            legend_surface.fill((40, 40, 40, 200))
+            self.screen.blit(legend_surface, legend_rect)
+            
+            y_offset = 15
+            if self.show_paths:
+                path_text = self.ui.small_font.render("Blue: A* Chosen Path (V)", True, (0, 150, 255))
+                self.screen.blit(path_text, (20, y_offset))
+                y_offset += 20
+            
+            if self.show_all_paths:
+                all_path_text = self.ui.small_font.render("Gray: A* Explored Paths (A)", True, (150, 150, 150))
+                self.screen.blit(all_path_text, (20, y_offset))
+                y_offset += 20
+                
+            if self.show_considered:
+                path_text = self.ui.small_font.render("Purple: A* Considered Nodes (C)", True, (180, 20, 180))
+                self.screen.blit(path_text, (20, y_offset))
+                y_offset += 20
+                
+            if self.show_heatmap:
+                heat_text = self.ui.small_font.render("Green-Red: Position Scores (H)", True, (255, 255, 0))
+                self.screen.blit(heat_text, (20, y_offset))
+    
+    def _draw_path(self, path, color):
+        """Draw a path with a given color"""
+        if not path:
+            return
+            
+        # Draw path cells
+        for pos in path:
+            # Skip positions with snakes for cleaner visualization
+            if pos in self.snake1.body or pos in self.snake2.body:
+                continue
+                
+            path_rect = pygame.Rect(
+                pos[0] * CELL_SIZE,
+                pos[1] * CELL_SIZE,
+                CELL_SIZE, CELL_SIZE
+            )
+            path_surface = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
+            path_surface.fill(color)
+            self.screen.blit(path_surface, path_rect)
+        
+        # Draw path direction arrows
+        for i in range(len(path) - 1):
+            current = path[i]
+            next_pos = path[i + 1]
+            direction = (next_pos[0] - current[0], next_pos[1] - current[1])
+            self._draw_arrow(current, direction, color[:3])  # Use RGB part of color
+            
+    def _draw_arrow(self, pos, direction, color=(255, 255, 255)):
+        """Draw an arrow showing path direction"""
+        x, y = pos
+        dx, dy = direction
+        
+        # Calculate arrow center coordinates
+        center_x = x * CELL_SIZE + CELL_SIZE // 2
+        center_y = y * CELL_SIZE + CELL_SIZE // 2
+        
+        # Calculate arrow points based on direction
+        if dx == 1:  # Right
+            points = [
+                (center_x, center_y - 5),
+                (center_x + 10, center_y),
+                (center_x, center_y + 5)
+            ]
+        elif dx == -1:  # Left
+            points = [
+                (center_x, center_y - 5),
+                (center_x - 10, center_y),
+                (center_x, center_y + 5)
+            ]
+        elif dy == 1:  # Down
+            points = [
+                (center_x - 5, center_y),
+                (center_x, center_y + 10),
+                (center_x + 5, center_y)
+            ]
+        elif dy == -1:  # Up
+            points = [
+                (center_x - 5, center_y),
+                (center_x, center_y - 10),
+                (center_x + 5, center_y)
+            ]
+        else:
+            return  # No valid direction
+            
+        # Draw the arrow
+        pygame.draw.polygon(self.screen, color, points)
+    
+    def _draw_help(self):
+        """Draw help overlay with keyboard controls"""
+        # Create semi-transparent background
+        help_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        help_surface.fill((0, 0, 0, 200))
+        self.screen.blit(help_surface, (0, 0))
+        
+        # Create help content
+        title = self.ui.title_font.render("Visualization Controls", True, (255, 255, 255))
+        
+        help_items = [
+            ("V", "Toggle A* chosen path visualization"),
+            ("A", "Toggle all explored A* paths"),
+            ("H", "Toggle local search heatmap"),
+            ("C", "Toggle A* considered nodes"),
+            ("P", "Pause/unpause game"),
+            ("F1", "Show/hide this help"),
+            ("SPACE", "Restart game (when game over)")
+        ]
+        
+        # Draw title
+        title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, 80))
+        self.screen.blit(title, title_rect)
+        
+        # Draw help items
+        y_offset = 140
+        for key, description in help_items:
+            # Key box
+            key_surface = self.ui.font.render(key, True, (255, 255, 255))
+            key_rect = pygame.Rect(SCREEN_WIDTH // 2 - 150, y_offset, 50, 30)
+            pygame.draw.rect(self.screen, (80, 80, 100), key_rect, 0, 5)
+            self.screen.blit(key_surface, (key_rect.centerx - key_surface.get_width() // 2, 
+                                          key_rect.centery - key_surface.get_height() // 2))
+            
+            # Description
+            desc_surface = self.ui.font.render(description, True, (200, 200, 200))
+            self.screen.blit(desc_surface, (SCREEN_WIDTH // 2 - 80, y_offset + 5))
+            
+            y_offset += 40
+            
+        # Close instruction
+        close_text = self.ui.small_font.render("Press F1 to close this help", True, (180, 180, 255))
+        close_rect = close_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 50))
+        self.screen.blit(close_text, close_rect)
+    
+    def _draw_paused(self):
+        """Draw paused indicator"""
+        # Create semi-transparent overlay
+        pause_surface = pygame.Surface((200, 60), pygame.SRCALPHA)
+        pause_surface.fill((0, 0, 0, 150))
+        
+        # Position at bottom center
+        pause_rect = pause_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 120))
+        self.screen.blit(pause_surface, pause_rect)
+        
+        # Draw text
+        pause_text = self.ui.font.render("PAUSED", True, (255, 255, 255))
+        text_rect = pause_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 120))
+        self.screen.blit(pause_text, text_rect)
+        
+        # Draw smaller instruction
+        unpause_text = self.ui.small_font.render("Press P to unpause", True, (200, 200, 200))
+        unpause_rect = unpause_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 100))
+        self.screen.blit(unpause_text, unpause_rect)

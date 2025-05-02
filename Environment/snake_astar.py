@@ -32,6 +32,12 @@ class SnakeAI:
             'LEFT': LEFT,
             'RIGHT': RIGHT
         }
+        
+        # Visualization data
+        self.current_path = []             # The chosen path
+        self.considered_nodes = {}         # Nodes considered with their f_scores
+        self.all_explored_paths = []       # All paths explored during search
+        self.current_target = None         # Current target food
     
     def make_move(self):
         """Calculate the best move using A* and update the snake's direction"""
@@ -40,10 +46,18 @@ class SnakeAI:
         
         # Find best target (food item)
         target = self.find_best_target()
+        self.current_target = target
         
+        # Reset visualization data
+        self.current_path = []
+        self.considered_nodes = {}
+        self.all_explored_paths = []
 
         # Find path to target using A*
         path = self.a_star_search(head_pos, target)
+        
+        # Store path for visualization
+        self.current_path = path if path else []
         
         if path and len(path) > 1:
             # Get the first move in the path
@@ -91,7 +105,7 @@ class SnakeAI:
         """A* search algorithm to find path from start to goal"""
         # Priority queue for open set, format: (f_score, position)
         open_set = []
-        heapq.heappush(open_set, (0, head_pos)) # It is an efficient priority queue implementation
+        heapq.heappush(open_set, (0, head_pos))
         
         # For path reconstruction
         came_from = {}
@@ -103,6 +117,9 @@ class SnakeAI:
         f_score = defaultdict(lambda: float('inf'))
         f_score[head_pos] = self.heuristic(head_pos, goal)
         
+        # Store initial node for visualization
+        self.considered_nodes[head_pos] = f_score[head_pos]
+        
         # To prevent infinite loops
         closed_set = set()
         
@@ -112,8 +129,10 @@ class SnakeAI:
             
             # If we reached the goal
             if current == goal:
-                # Reconstruct and return the path
-                return self.reconstruct_path(came_from, current)
+                # Reconstruct path and add it to all_explored_paths
+                final_path = self.reconstruct_path(came_from, current)
+                self.all_explored_paths.append(('chosen', final_path))
+                return final_path
             
             # Add to closed set to avoid revisiting
             closed_set.add(current)
@@ -138,6 +157,14 @@ class SnakeAI:
                     came_from[neighbor] = current
                     actual_score[neighbor] = tentative_actual_score
                     f_score[neighbor] = tentative_actual_score + self.heuristic(neighbor, goal)
+                    
+                    # Store for visualization
+                    self.considered_nodes[neighbor] = f_score[neighbor]
+                    
+                    # Store this partial path for visualization
+                    if current in came_from:  # Only if it's not the start node
+                        partial_path = self.reconstruct_path(came_from, neighbor)
+                        self.all_explored_paths.append(('explored', partial_path))
                     
                     # Add to open set if not already there
                     if neighbor not in [pos for _, pos in open_set]:
@@ -227,4 +254,3 @@ class SnakeAI:
         # Reverse to get path from start to goal
         path.reverse()
         return path
-    

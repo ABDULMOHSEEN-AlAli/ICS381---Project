@@ -24,6 +24,10 @@ class SnakeLocalSearch:
             'normal_move_cost': SAVE_MOVE_COST,    # Normal move cost
             'trap_cost': SPIKE_TRAP_COST,           # Trap cost
         }
+        
+        # Visualization data
+        self.evaluated_cells = {}  # Stores positions with their scores
+        self.best_move = None  # Stores the chosen best move
     
     def make_move(self):
         """Calculate the best move using local search and update the snake direction"""
@@ -33,10 +37,15 @@ class SnakeLocalSearch:
         # Get available directions
         available_directions = self.snake.get_available_dire(self.snake.direction)
         
+        # Reset visualization data
+        self.evaluated_cells = {}
+        self.best_move = None
+        
         # If no available directions, just continue 
         if not available_directions:
             best_direction = self.snake.direction
             self.snake.update_move(best_direction)
+            return
         
         # Evaluate each neighbor position
         direction_scores = []
@@ -50,21 +59,24 @@ class SnakeLocalSearch:
             # Calculate position score
             score = self.evaluate_position(next_pos)
             direction_scores.append((direction, score))
-        # direction_names = {(0, -1): "UP", (0, 1): "DOWN", (-1, 0): "LEFT", (1, 0): "RIGHT"}
-        # readable_scores = [(direction_names.get(direction, direction), score) for direction, score in direction_scores]
-        # print("Direction scores:", readable_scores)
+            
+            # Store for visualization
+            self.evaluated_cells[next_pos] = score
+        
         if not direction_scores:
             best_direction = self.snake.direction
-            self.snake.update_move(best_direction)
         else:
             # Choose best direction based on score
             min_score = min(direction_scores, key=lambda x: x[1])[1]
             best_directions = [direction for direction, score in direction_scores if score == min_score]
-            # print("Best directions:", best_directions)
             best_direction = random.choice(best_directions)
+            
+            # Store best move for visualization
+            next_pos = (head_pos[0] + best_direction[0], head_pos[1] + best_direction[1])
+            self.best_move = next_pos
 
-            # Update snake direction
-            self.snake.update_move(best_direction)
+        # Update snake direction
+        self.snake.update_move(best_direction)
     
     def is_valid_position(self, position):
         """Check if a position is valid (not a collision)"""

@@ -20,7 +20,7 @@ DARK_GREY = (175, 175, 175)
 VISIBILITY_RANGE = 2  # How far snakes can see other snakes
 EXPANSION_RATE_NORMAL = 1
 EXPANSION_RATE_SUPER = 1
-MAX_SCORE = 20  # Game ends when a snake reaches this score
+MAX_SCORE = 50  # Game ends when a snake reaches this score
 MAX_TURNS = 500  # Maximum number of turns before the game ends
 
 # Item probabilities
@@ -38,7 +38,7 @@ RIGHT = (1, 0)
 
 # Items rewards
 NORMAL_FOOD_REWARD = 100
-SUPER_FOOD_REWARD = 140
+SUPER_FOOD_REWARD = 130
 
 SPIKE_TRAP_COST = 300  # Penalty for hitting a spike trap
 SAVE_MOVE_COST = 80  # Reward for saving a move
